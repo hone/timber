@@ -89,12 +89,3 @@ module Timber
     end
   end
 end
-
-if __FILE__ == $0
-AWS::S3::Base.establish_connection!(
-  :access_key_id => '1RCE5BTYZ51Y1XH4HXR2',
-  :secret_access_key => 'iBbZX6Nub4oIB7kT0PttpeIVjw23RFhcF7o2r5BM'
-)
-
-S3Appender.new("my_appender", "logtester", "examplage")
-end
