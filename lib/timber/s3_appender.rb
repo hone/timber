@@ -1,10 +1,14 @@
-require 'aws-s3'
+require 'aws/s3'
 require 'logging'
 require 'thread'
 
 module Timber
   class S3Appender < Logging::Appender
-    include Buffering
+    include Logging::Appenders::Buffering
+
+    DEFAULT_AGE = 500
+    DEFAULT_SIZE = 16 * 1024
+    DEFAULT_EVENT_BUFFER = 50
 
     # call-seq:
     #   S3Appender.new( name, bucket, object_prefix, options )
@@ -26,18 +30,22 @@ module Timber
     # under that condition. It will push when the first condition is surpassed.
     #
     def initialize(name, bucket_name, object_prefix, opts = {})
-      @bucket_name  = bucket_name
-      @prefix       = prefix
+      super(name, opts)
+      @bucket_name    = bucket_name
+      @prefix         = object_prefix
+  
+      @age_limit      = opts.delete(:age)           || DEFAULT_AGE
+      @size_limit     = opts.delete(:size)          || DEFAULT_SIZE
+      @buffer_limit   = opts.delete(:event_buffer)  || DEFAULT_EVENT_BUFFER
+      @sending_queue  = Queue.new
 
-      @age_limit      = opts.delete(:age) || DEFAULT_AGE
-      @size_limit     = opts.delete(:age) || DEFAULT_SIZE
-      @buffer_limit   = opts.delete(:age) || DEFAULT_EVENT_BUFFER
-
+      configure_buffering(opts.merge(:auto_flushing => @buffer_limit))
       start_new_log
+      start_sending_thread 
     end
 
     def flush
-      buffer_to_send = buffer
+      buffer_to_send = buffer.dup
       buffer.clear
 
       send_buffer(current_object_name, buffer_to_send) unless buffer_to_send.empty?
@@ -48,13 +56,15 @@ module Timber
 
     def close
       flush
+      @sending_queue.push [-1, -1]
+      @sending_thread.join
     end
 
     def write(event)
       super
-      @buffer_size += event.size
+      @buffered_amount += event.size
 
-      if @buffer_size > @buffer_limit
+      if @buffered_amount > @size_limit
         flush
       end
     end
@@ -62,17 +72,14 @@ module Timber
     private
 
     def current_object_name
-      "#{@prefix}-#{@log_begins.to_i}"
+      "#{@prefix}-#{(@log_begins.to_f * 100_000).to_i}"
     end
 
-    def send_buffer(buffer_to_send)
-      Thread.start {
-        #AWS::S3::S3Object.store
-      }
+    def send_buffer(key, buffer_to_send)
+      @sending_queue.push [key, buffer_to_send]
     end
 
     def start_new_log
-      @buffer       = []
       @buffer_size  = 0
       @log_begins   = Time.new
       set_timeout 
@@ -87,5 +94,17 @@ module Timber
         flush
       } unless @age_limit == 0
     end
+
+    def start_sending_thread
+      @sending_thread = Thread.new do
+        loop do
+          key, buffer_to_send = @sending_queue.pop
+          break if key == -1 && buffer_to_send == -1
+
+          AWS::S3::S3Object.store(key, buffer_to_send.join, @bucket_name)
+        end
+      end
+    end
   end
 end
+
