@@ -1,6 +1,6 @@
-= timber
+= Timber
 
-Description goes here.
+Logging appender for AWS S3
 
 == Note on Patches/Pull Requests
  
@@ -14,4 +14,4 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2009 Terence Lee. See LICENSE for details.
+Copyright (c) 2009 Terence Lee and Bob Potter. See LICENSE for details.

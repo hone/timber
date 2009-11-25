@@ -5,12 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "timber"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Logging appender for AWS S3}
+    gem.description = %Q{Logging appender for AWS S3}
     gem.email = "hone02@gmail.com"
     gem.homepage = "http://github.com/hone/timber"
-    gem.authors = ["Terence Lee"]
-    gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.authors = ["Terence Lee", "Bob Potter"]
+    gem.add_dependency "aws-s3"
+    gem.add_dependency "logging"
+    gem.add_development_dependency "shoulda", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
