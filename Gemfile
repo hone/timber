@@ -3,3 +3,4 @@ gem "logging"
 
 # testing
 gem "shoulda", :only => :test
+gem "rr",      :only => :test
