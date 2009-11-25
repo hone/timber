@@ -62,9 +62,9 @@ module Timber
 
     def write(event)
       super
-      @buffered_amount += event.size
+      @buffer_size += event.size
 
-      if @buffered_amount > @size_limit
+      if @buffer_size > @size_limit
         flush
       end
     end
