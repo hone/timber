@@ -12,6 +12,7 @@ begin
     gem.authors = ["Terence Lee", "Bob Potter"]
     gem.add_dependency "aws-s3"
     gem.add_dependency "logging"
+    gem.add_dependency "uuid"
     gem.add_development_dependency "shoulda", ">= 0"
     gem.add_development_dependency "rr"
     gem.add_development_dependency 'leftright'

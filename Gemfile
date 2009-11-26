@@ -1,5 +1,6 @@
 gem "aws-s3"
 gem "logging"
+gem "uuid"
 
 # testing
 gem "shoulda",   :only => :test

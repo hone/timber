@@ -1,5 +1,6 @@
 require 'aws/s3'
 require 'logging'
+require 'uuid'
 require 'thread'
 
 module Timber
@@ -33,6 +34,7 @@ module Timber
       super(name, opts)
       @bucket_name    = bucket_name
       @prefix         = object_prefix
+      @uuid           = UUID.generate
 
       @age_limit      = opts.delete(:age)           || DEFAULT_AGE
       @size_limit     = opts.delete(:size)          || DEFAULT_SIZE
@@ -76,7 +78,7 @@ module Timber
     private
 
     def current_object_name
-      "#{@prefix}-#{(@log_begins.to_f * 100_000).to_i}"
+      "#{@prefix}/#{@uuid}/#{(@log_begins.to_f * 100_000).to_i}"
     end
 
     def send_buffer(key, buffer_to_send)
@@ -85,7 +87,7 @@ module Timber
 
     def start_new_log
       @buffer_size  = 0
-      @log_begins   = Time.new
+      @log_begins   = Time.now
       set_timeout 
     end
 
