@@ -8,3 +8,5 @@ gem "rr",        :only => :test
 gem "rake",      :only => :test
 gem "jeweler",   :only => :test
 gem "leftright", :only => :test
+
+bin_path 'gbin'
