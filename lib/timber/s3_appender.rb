@@ -33,11 +33,15 @@ module Timber
       super(name, opts)
       @bucket_name    = bucket_name
       @prefix         = object_prefix
-  
+
       @age_limit      = opts.delete(:age)           || DEFAULT_AGE
       @size_limit     = opts.delete(:size)          || DEFAULT_SIZE
       @buffer_limit   = opts.delete(:event_buffer)  || DEFAULT_EVENT_BUFFER
       @sending_queue  = Queue.new
+
+      # uglyness - there is no way to turn off auto_flushing
+      # with the Buffering module.
+      @buffer_limit = 999999999 if @buffer_limit == 0
 
       configure_buffering(opts.merge(:auto_flushing => @buffer_limit))
       start_new_log
@@ -64,9 +68,9 @@ module Timber
       super
       @buffer_size += event.size
 
-      if @buffer_size > @size_limit
+      if @buffer_size >= @size_limit
         flush
-      end
+      end unless @size_limit == 0
     end
 
     private
@@ -91,7 +95,7 @@ module Timber
       # start new timeout
       @timeout_thread = Thread.start {
         sleep @age_limit
-        flush
+        sync { flush }
       } unless @age_limit == 0
     end
 
