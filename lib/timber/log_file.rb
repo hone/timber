@@ -1,6 +1,6 @@
 module Timber
   class LogFile
-    attr_accessor :size, :uuid, :objects
+    attr_accessor :size, :uuid, :objects, :start_time, :end_time, :metadata
 
     def self.find(bucket, prefix = '')
       objects = AWS::S3::Bucket.objects(bucket, :prefix => prefix)
@@ -26,7 +26,17 @@ module Timber
       @position = 0
 
       @size = @objects.inject(0) { |sum,o| sum += o.size }
-      @uuid = LogFile.extract_uuid(@objects.first.key)
+      
+      extract_info
+    end
+
+    def extract_info
+      first_object  = @objects.first
+
+      @uuid       = LogFile.extract_uuid(first_object.key)
+      @start_time = LogFile.extract_timestamp(first_object.key)
+      @end_time   = LogFile.extract_timestamp(@objects.last.key)
+      @metadata   = first_object.metadata.inject({}) { |hash, kv| hash[k.first.gsub("x-amz-meta-","")] = k.last; hash }
     end
 
     def seek(to, whence = IO::SEEK_SET)
@@ -46,11 +56,20 @@ module Timber
     end
 
     def refresh!
+=begin
+      marker = "#{@objects.last.key}"
+      prefix = marker.gsub(/\/.*$/,'')
+      new_objects = AWS::S3::Bucket.objects(bucket, :prefix => prefix, :marker => marker)
+=end
     end
 
     private
     def self.extract_uuid(key)
       key.split("/")[1]
+    end
+
+    def self.extract_timestamp(key)
+      Time.at(key.split("/")[2].to_i / 100_000)
     end
 
     def read_bytes(bytes)

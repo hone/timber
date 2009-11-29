@@ -39,6 +39,7 @@ module Timber
       @age_limit      = opts.delete(:age)           || DEFAULT_AGE
       @size_limit     = opts.delete(:size)          || DEFAULT_SIZE
       @buffer_limit   = opts.delete(:event_buffer)  || DEFAULT_EVENT_BUFFER
+      @metadata       = opts.delete(:metadata)      || {}
       @sending_queue  = Queue.new
 
       # uglyness - there is no way to turn off auto_flushing
@@ -46,6 +47,7 @@ module Timber
       @buffer_limit = 999999999 if @buffer_limit == 0
 
       configure_buffering(opts.merge(:auto_flushing => @buffer_limit))
+      build_default_metadata
       start_new_log
       start_sending_thread 
     end
@@ -76,6 +78,16 @@ module Timber
     end
 
     private
+    def metadata_for_amazon
+      @metadata.inject({}) { |hash, kv| hash["x-amz-meta-#{kv.first}"] = kv.last; hash }
+    end
+
+    def build_default_metadata
+      @metadata.merge!({
+        "hostname" => `hostname`.chomp,
+        "pid"      => $$ 
+      })
+    end
 
     def current_object_name
       "#{@prefix}/#{@uuid}/#{(@log_begins.to_f * 100_000).to_i}"
@@ -107,7 +119,7 @@ module Timber
           key, buffer_to_send = @sending_queue.pop
           break if key == -1 && buffer_to_send == -1
 
-          AWS::S3::S3Object.store(key, buffer_to_send.join, @bucket_name)
+          AWS::S3::S3Object.store(key, buffer_to_send.join, @bucket_name, metadata_for_amazon)
         end
       end
     end

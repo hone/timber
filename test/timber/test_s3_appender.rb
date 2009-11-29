@@ -7,7 +7,17 @@ class TestS3Appender < Test::Unit::TestCase
       stub(Time).now { t }
       stub(UUID).generate { 'myuuid' }
 
-      mock(AWS::S3::S3Object).store("web/myuuid/#{(t.to_f * 100_000).to_i.to_s}", 'logit', 'bucket')
+      mock(AWS::S3::S3Object).store("web/myuuid/#{(t.to_f * 100_000).to_i.to_s}", 'logit', 'bucket', anything)
+
+      appender = Timber::S3Appender.new('blah', 'bucket', 'web', :event_buffer => 1)
+      appender.write('logit')
+    end
+  end
+
+  context "metadata" do
+    should "include hostname and process id by default" do
+      hostname = `hostname`.chomp
+      mock(AWS::S3::S3Object).store(anything, anything, anything, hash_including("x-amz-meta-hostname" => hostname, "x-amz-meta-pid" => $$))
 
       appender = Timber::S3Appender.new('blah', 'bucket', 'web', :event_buffer => 1)
       appender.write('logit')
