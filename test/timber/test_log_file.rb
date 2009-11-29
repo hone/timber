@@ -12,10 +12,12 @@ class TestLogFile < Test::Unit::TestCase
     setup do
       @o1 = AWS::S3::S3Object.new
       stub(@o1).value { "hello" }
+      stub(@o1).key   { "prefix/234a/123" }
       stub(@o1).size  { @o1.value.size }
 
       @o2 = AWS::S3::S3Object.new
       stub(@o2).value { "goodbye" }
+      stub(@o2).key   { "prefix/34sdf/456" }
       stub(@o2).size  { @o2.value.size }
     end
 
