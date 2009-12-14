@@ -23,6 +23,14 @@ rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
 end
 
+desc 'Runs bundler, run tests in context'
+task :bundler_test do
+  require 'bundler'
+  Bundler::CLI.run('bundle')
+  require File.dirname(__FILE__) + '/vendor/gems/environment'
+  Rake::Task[:test].invoke
+end
+
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
